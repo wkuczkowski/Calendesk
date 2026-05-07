@@ -53,9 +53,9 @@ window.CalendeskRenewalFeature = (function () {
     }
 
     // Remove existing renewal containers to prevent duplicates
-    const existingContainers = document.querySelectorAll('.renew-wrapper');
-    existingContainers.forEach(wrapper => {
-      const container = wrapper.closest('.container');
+    const existingContainers = document.querySelectorAll(".renew-wrapper");
+    existingContainers.forEach((wrapper) => {
+      const container = wrapper.closest(".container");
       if (container) {
         container.remove();
       } else {
@@ -66,20 +66,20 @@ window.CalendeskRenewalFeature = (function () {
 
   function tryInitialize() {
     // Only run on subscriptions page
-    if (window.location.pathname !== '/subscriptions') {
+    if (window.location.pathname !== "/subscriptions") {
       return;
     }
 
     if (initialized) return;
 
     // Check if renewal section already exists to prevent duplicates
-    if (document.querySelector('.renew-wrapper')) {
+    if (document.querySelector(".renew-wrapper")) {
       initialized = true;
       return;
     }
 
     // Check if we have the required token
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
       return;
     }
@@ -94,7 +94,7 @@ window.CalendeskRenewalFeature = (function () {
 
     observer = new MutationObserver(function () {
       // Check if we navigated to subscriptions page
-      if (window.location.pathname === '/subscriptions' && !initialized) {
+      if (window.location.pathname === "/subscriptions" && !initialized) {
         tryInitialize();
       }
     });
@@ -117,70 +117,134 @@ window.CalendeskRenewalFeature = (function () {
 
       // Fetch all subscriptions
       const resp = await fetch(
-        'https://api.calendesk.com/api/v2/user/subscriptions?page=1&limit=100',
+        "https://api.calendesk.com/api/v2/user/subscriptions?page=1&limit=100",
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'X-Tenant': 'slawomir-mentzen-rvs',
-            'Accept': 'application/json'
-          }
-        }
+            Authorization: `Bearer ${token}`,
+            "X-Tenant": "slawomir-mentzen-rvs",
+            Accept: "application/json",
+          },
+        },
       );
-      
+
       if (!resp.ok) {
         return;
       }
-      
+
       const { data } = await resp.json();
 
-      // Allowed IDs set
-      const allowedIds = new Set([
-        190, 191, 197, 196, 194, 195,
-        234, 235, 269, 238, 239, 237,
-        241, 242, 270, 198, 199
-      ]);
+      // Renewal mapping groups:
+      // - If user has ANY canceled subscription in the group -> show renew for targetId
+      // - If user has ANY active subscription in the group -> do NOT show renew for targetId
+      const renewalGroups = [
+        // Pakiety: Nowy Mentzen+
+        { ids: [233, 269, 432], targetId: 432 },
+        { ids: [235, 434], targetId: 434 },
+        { ids: [234, 433], targetId: 433 },
+        { ids: [241, 436], targetId: 436 },
+        { ids: [242, 437], targetId: 437 },
+        { ids: [240, 270, 435], targetId: 435 },
+        // Pakiety: Mentzen+ IT
+        { ids: [86, 190], targetId: 190 },
+        { ids: [90, 191], targetId: 191 },
+        { ids: [88, 197], targetId: 197 },
+        { ids: [87, 196], targetId: 196 },
+        { ids: [89, 194], targetId: 194 },
+        { ids: [91, 195], targetId: 195 },
+        { ids: [158, 198], targetId: 198 },
+        { ids: [159, 199], targetId: 199 },
+      ];
+
+      // Allowed IDs set (derived from mapping groups)
+      const allowedIds = new Set();
+      renewalGroups.forEach((group) => {
+        group.ids.forEach((id) => allowedIds.add(id));
+      });
 
       // Normalize & filter to only allowed subscriptions
       const subs = data
-        .map(s => ({
+        .map((s) => ({
           ...s,
           subscription_id: Number(s.subscription_id),
-          status: s.status.toLowerCase()
+          status: String(s.status || "").toLowerCase(),
         }))
-        .filter(s => allowedIds.has(s.subscription_id));
+        .filter((s) => allowedIds.has(s.subscription_id));
 
-      // Of the ones that are canceled, drop any whose ID also has an active
-      const canceled = subs.filter(s => s.status === 'canceled');
-      const toRenewById = {};
-      canceled.forEach(sub => {
-        const hasActive = subs.some(
-          other => other.subscription_id === sub.subscription_id && other.status === 'active'
-        );
-        if (!hasActive) {
-          toRenewById[sub.subscription_id] = sub;
+      // Build status/name flags by subscription_id
+      const idFlags = new Map();
+      subs.forEach((s) => {
+        const id = s.subscription_id;
+        let flags = idFlags.get(id);
+        if (!flags) {
+          flags = { hasActive: false, hasCanceled: false, name: null };
+          idFlags.set(id, flags);
+        }
+
+        if (s.status === "active") flags.hasActive = true;
+        if (s.status === "canceled") flags.hasCanceled = true;
+        if (
+          s.subscription &&
+          typeof s.subscription.name === "string" &&
+          s.subscription.name.trim()
+        ) {
+          flags.name = s.subscription.name;
         }
       });
 
-      const renewList = Object.values(toRenewById);
-      if (renewList.length === 0) {
+      // Decide which target subscriptions to show for renewal
+      const renewEntries = [];
+      renewalGroups.forEach((group) => {
+        const hasCanceledInGroup = group.ids.some((id) => {
+          const flags = idFlags.get(id);
+          return flags ? flags.hasCanceled : false;
+        });
+
+        const hasActiveInGroup = group.ids.some((id) => {
+          const flags = idFlags.get(id);
+          return flags ? flags.hasActive : false;
+        });
+
+        if (hasCanceledInGroup && !hasActiveInGroup) {
+          // Try to find a name from any ID in the group (prefer target first)
+          let groupName = null;
+          const targetFlags = idFlags.get(group.targetId);
+          if (targetFlags && targetFlags.name) {
+            groupName = targetFlags.name;
+          } else {
+            // Fallback: use name from any other ID in the group
+            for (const id of group.ids) {
+              const flags = idFlags.get(id);
+              if (flags && flags.name) {
+                groupName = flags.name;
+                break;
+              }
+            }
+          }
+          const label = groupName
+            ? `⟳ Odnów "${groupName}"`
+            : `⟳ Odnów subskrypcję (${group.targetId})`;
+          renewEntries.push({ targetId: group.targetId, label });
+        }
+      });
+
+      if (renewEntries.length === 0) {
         initialized = true;
         return; // nothing to show
       }
 
       // Build and insert the renewal UI
-      buildRenewalUI(renewList);
-      
-      initialized = true;
+      buildRenewalUI(renewEntries);
 
+      initialized = true;
     } catch (err) {
       // Silent fail in production
     }
   }
 
   function injectStyles() {
-    const style = document.createElement('style');
-    style.id = 'calendesk-renewal-styles';
+    const style = document.createElement("style");
+    style.id = "calendesk-renewal-styles";
     style.textContent = `
       .renew-wrapper {
         background: #fff;
@@ -213,41 +277,41 @@ window.CalendeskRenewalFeature = (function () {
         transform: translateY(-1px);
       }
     `;
-    
+
     // Remove existing styles to prevent duplicates
-    const existingStyles = document.getElementById('calendesk-renewal-styles');
+    const existingStyles = document.getElementById("calendesk-renewal-styles");
     if (existingStyles) {
       existingStyles.remove();
     }
-    
+
     document.head.appendChild(style);
   }
 
   function buildRenewalUI(renewList) {
     // Check if renewal UI already exists
-    if (document.querySelector('.renew-wrapper')) {
+    if (document.querySelector(".renew-wrapper")) {
       return;
     }
 
     // Build container > wrapper > grid
-    const container = document.createElement('div');
-    container.className = 'container';
+    const container = document.createElement("div");
+    container.className = "container";
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'renew-wrapper';
+    const wrapper = document.createElement("div");
+    wrapper.className = "renew-wrapper";
 
-    const title = document.createElement('div');
-    title.className = 'text-h4';
-    title.textContent = 'Odnów subskrypcje';
+    const title = document.createElement("div");
+    title.className = "text-h4";
+    title.textContent = "Odnów subskrypcje";
     wrapper.appendChild(title);
 
-    const grid = document.createElement('div');
-    grid.className = 'renew-buttons-container';
+    const grid = document.createElement("div");
+    grid.className = "renew-buttons-container";
 
-    renewList.forEach(sub => {
-      const a = document.createElement('a');
-      a.href = `https://subskrypcje.mentzen.pl/subscription/${sub.subscription_id}`;
-      a.textContent = `⟳ Odnów "${sub.subscription.name}"`;
+    renewList.forEach((item) => {
+      const a = document.createElement("a");
+      a.href = `https://subskrypcje.mentzen.pl/subscription/${item.targetId}`;
+      a.textContent = item.label;
       grid.appendChild(a);
     });
 
@@ -255,9 +319,9 @@ window.CalendeskRenewalFeature = (function () {
     container.appendChild(wrapper);
 
     // Insert into DOM
-    const navbar = document.querySelector('.navbar1');
+    const navbar = document.querySelector(".navbar1");
     if (navbar) {
-      navbar.insertAdjacentElement('afterend', container);
+      navbar.insertAdjacentElement("afterend", container);
     } else {
       document.body.prepend(container);
     }
@@ -305,18 +369,18 @@ window.CalendeskRenewalFeature = (function () {
 window.CalendeskRenewalFeature.init();
 
 // Helper function for debugging
-window.checkRenewalFeature = function() {
-  if (window.location.pathname === '/subscriptions') {
-    const renewalWrapper = document.querySelector('.renew-wrapper');
+window.checkRenewalFeature = function () {
+  if (window.location.pathname === "/subscriptions") {
+    const renewalWrapper = document.querySelector(".renew-wrapper");
     if (!renewalWrapper) {
-      console.warn('Renewal feature not found, reinitializing...');
+      console.warn("Renewal feature not found, reinitializing...");
       window.CalendeskRenewalFeature.reinitialize();
       return false;
     }
-    console.log('Renewal feature is working correctly');
+    console.log("Renewal feature is working correctly");
     return true;
   } else {
-    console.log('Not on subscriptions page');
+    console.log("Not on subscriptions page");
     return true;
   }
 };

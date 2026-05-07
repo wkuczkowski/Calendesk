@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ksiegowosc</title>
+    <!-- CSS -->
+    <link href="../../styles.css" rel="stylesheet" />
+    <style>
+      body {
+        background-color: #f9f8f6;
+        font-family: "Montserrat", Sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .K-info-tooltip {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 5;
+      }
+      .K-info-tooltip__icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #2a4f72;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Georgia, "Times New Roman", serif;
+        font-style: italic;
+        font-weight: 700;
+        font-size: 15px;
+        line-height: 1;
+        cursor: help;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+        transition: transform 0.2s ease, background 0.2s ease;
+        user-select: none;
+      }
+      .K-info-tooltip__icon:hover {
+        background: #122a3f;
+        transform: scale(1.1);
+      }
+      .K-info-tooltip__popup {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 440px;
+        max-width: calc(100vw - 40px);
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        padding: 14px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-6px);
+        transition: opacity 0.2s ease, transform 0.2s ease,
+          visibility 0s linear 0.2s;
+        z-index: 20;
+        pointer-events: none;
+      }
+      .K-info-tooltip:hover .K-info-tooltip__popup,
+      .K-info-tooltip:focus-within .K-info-tooltip__popup {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        transition: opacity 0.2s ease, transform 0.2s ease,
+          visibility 0s linear 0s;
+        pointer-events: auto;
+      }
+      .K-info-tooltip__popup img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 4px;
+        border: 1px solid #eee;
+      }
+      .K-info-tooltip__popup p {
+        margin: 12px 0 0;
+        font-size: 13px;
+        color: #333;
+        line-height: 1.5;
+        text-align: left;
+      }
+      .K-info-tooltip__popup a {
+        color: #2a4f72;
+        text-decoration: underline;
+      }
+
+      @media (max-width: 600px) {
+        .K-info-tooltip__popup {
+          width: 280px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="Container-Image">
+      <img
+        src="https://wkuczkowski.github.io/Calendesk/images/Księgowość.svg"
+        alt="Tło"
+        class="Image_for_container" />
+      <div class="Container-Overlay" style="padding: 35px; max-width: 900px">
+        <h1
+          class="overlay_title"
+          style="font-size: 30px; margin-bottom: 0px; margin-top: 0px">
+          Zaloguj się do wybranego portalu.
+        </h1>
+      </div>
+    </div>
+    <div class="Background-ContainerV4" style="padding-bottom: 60px">
+      <div class="Kafelki-Container">
+        <div class="K-page-card">
+          <div
+            class="K-page-card__img"
+            style="
+              background:
+                radial-gradient(
+                  circle at 25% 20%,
+                  rgba(110, 170, 215, 0.3) 0%,
+                  transparent 55%
+                ),
+                linear-gradient(135deg, #2a4f72 0%, #122a3f 100%);
+              color: #ffffff;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 600;
+              font-size: 16px;
+              letter-spacing: 0.5px;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            ">
+            SaldeoSMART
+          </div>
+          <div class="K-page-card__content">
+            <h2
+              class="K-page-card__header"
+              style="margin-top: 20px; margin-bottom: 0px">
+              SaldeoSMART
+            </h2>
+            <p class="K-page-card__text">
+              Skorzystaj jeżeli chcesz przesłać nam dokumenty lub przejrzeć
+              swoje dane raportowe.
+            </p>
+            <a
+              class="K-page-card__btn"
+              href="https://saldeo.brainshare.pl/login/"
+              >Zaloguj się</a
+            >
+          </div>
+        </div>
+        <div class="K-page-card">
+          <div
+            class="K-page-card__img"
+            style="
+              background:
+                radial-gradient(
+                  circle at 25% 20%,
+                  rgba(110, 170, 215, 0.3) 0%,
+                  transparent 55%
+                ),
+                linear-gradient(135deg, #2a4f72 0%, #122a3f 100%);
+              color: #ffffff;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 600;
+              font-size: 16px;
+              letter-spacing: 0.5px;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            ">
+            Portal Biura
+          </div>
+          <div class="K-page-card__content">
+            <div
+              class="K-info-tooltip"
+              tabindex="0"
+              aria-label="Instrukcja logowania do Portalu Biura">
+              <div class="K-info-tooltip__icon" aria-hidden="true">i</div>
+              <div class="K-info-tooltip__popup" role="tooltip">
+                <img
+                  src="https://wkuczkowski.github.io/Calendesk/images/instrukcja_logowania_PD_PB_Subiekt123.jpg"
+                  alt="Instrukcja logowania do Portalu Biura" />
+                <p>
+                  Po zalogowaniu się do konta InsERT kliknij symbol zaznaczony
+                  czerwoną strzałką, aby przejść do Portalu Biura. Jeśli nie
+                  widzisz aplikacji Portal Biura, napisz do nas na
+                  <a href="mailto:subskrypcje@mentzen.pl"
+                    >subskrypcje@mentzen.pl</a
+                  >.
+                </p>
+              </div>
+            </div>
+            <h2
+              class="K-page-card__header"
+              style="margin-top: 20px; margin-bottom: 0px">
+              Portal Biura
+            </h2>
+            <p class="K-page-card__text">
+              Skorzystaj jeżeli chcesz przesłać nam dokumenty lub przejrzeć
+              swoje dane raportowe.
+            </p>
+            <a class="K-page-card__btn" href="https://konto.insert.com.pl/"
+              >Zaloguj się</a
+            >
+          </div>
+        </div>
+        <div class="K-page-card">
+          <div
+            class="K-page-card__img"
+            style="
+              background:
+                radial-gradient(
+                  circle at 25% 20%,
+                  rgba(110, 170, 215, 0.3) 0%,
+                  transparent 55%
+                ),
+                linear-gradient(135deg, #2a4f72 0%, #122a3f 100%);
+              color: #ffffff;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 600;
+              font-size: 16px;
+              letter-spacing: 0.5px;
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            ">
+            Subiekt 123
+          </div>
+          <div class="K-page-card__content">
+            <div
+              class="K-info-tooltip"
+              tabindex="0"
+              aria-label="Instrukcja logowania do Subiekt 123">
+              <div class="K-info-tooltip__icon" aria-hidden="true">i</div>
+              <div class="K-info-tooltip__popup" role="tooltip">
+                <img
+                  src="https://wkuczkowski.github.io/Calendesk/images/instrukcja_logowania_PD_PB_Subiekt123.jpg"
+                  alt="Instrukcja logowania do Subiekt 123" />
+                <p>
+                  Po zalogowaniu się do konta InsERT kliknij symbol zaznaczony
+                  czerwoną strzałką, aby przejść do Subiekt 123. Jeśli nie
+                  widzisz aplikacji Subiekt 123, napisz do nas na
+                  <a href="mailto:subskrypcje@mentzen.pl"
+                    >subskrypcje@mentzen.pl</a
+                  >.
+                </p>
+              </div>
+            </div>
+            <h2
+              class="K-page-card__header"
+              style="margin-top: 20px; margin-bottom: 0px">
+              Subiekt123
+            </h2>
+            <p class="K-page-card__text">
+              Skorzystaj jeżeli chcesz wystawić fakturę.
+            </p>
+            <a class="K-page-card__btn" href="https://konto.insert.com.pl/"
+              >Zaloguj się</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
